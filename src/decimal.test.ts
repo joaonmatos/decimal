@@ -133,16 +133,16 @@ test("max", () => {
 
 test("round", () => {
   expect(BigDecimal.TEN.round().number).toBe(10);
-  expect(BigDecimal.valueOf("23.12956412").round().toString()).toBe(
+  expect(BigDecimal.valueOf("23.12956412").round(6).toString()).toBe(
     "23.129564",
   );
-  expect(BigDecimal.valueOf("23.12956494").round().toString()).toBe(
+  expect(BigDecimal.valueOf("23.12956494").round(6).toString()).toBe(
     "23.129565",
   );
-  expect(BigDecimal.valueOf("23.12956457").round().toString()).toBe(
+  expect(BigDecimal.valueOf("23.12956457").round(6).toString()).toBe(
     "23.129564",
   );
-  expect(BigDecimal.valueOf("23.12956559").round().toString()).toBe(
+  expect(BigDecimal.valueOf("23.12956559").round(6).toString()).toBe(
     "23.129566",
   );
 });
