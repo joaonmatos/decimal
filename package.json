@@ -1,0 +1,39 @@
+{
+  "type": "module",
+  "name": "@joaonmatos/decimal",
+  "version": "0.1.0",
+  "author": {
+    "name": "João N. Matos",
+    "email": "me@joaonmatos.com",
+    "url": "https://www.joaonmatos.com/"
+  },
+  "license": "Apache-2.0",
+  "repository": "github:joaonmatos/decimal",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "package.json",
+    "package-lock.json"
+  ],
+  "scripts": {
+    "check": "prettier --check . && tsc --noEmit && vitest run",
+    "dev": "vitest --ui",
+    "format": "prettier --write .",
+    "build": "tsc",
+    "prepare": "npm run check && npm run build"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.4",
+    "@vitest/ui": "^3.0.4",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}
