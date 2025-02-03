@@ -1,4 +1,4 @@
-import { RoundingModes, type RoundingMode } from "./rounding.js";
+import { RoundingMode } from "./rounding.js";
 
 /**
  * Params for rounding operation.
@@ -206,7 +206,7 @@ export class BigDecimal {
   divideToIntegralValue(other: BigDecimal): BigDecimal {
     return this.divide(other).round({
       precision: 0,
-      roundingMode: RoundingModes.Down,
+      roundingMode: RoundingMode.Down,
     });
   }
 
@@ -335,7 +335,7 @@ export class BigDecimal {
    */
   round(props?: RoudingParams): BigDecimal {
     const {
-      roundingMode = RoundingModes.Default,
+      roundingMode = RoundingMode.HalfEven,
       precision = BigDecimal.#PRECISION,
       normalized = false,
     } = props ?? {};
@@ -353,17 +353,17 @@ export class BigDecimal {
     if (excessExponent <= 0) {
       return this;
     }
-    if (roundingMode === "ceiling") {
+    if (roundingMode === RoundingMode.Ceiling) {
       return this.#roundCeiling(precision).normalized();
-    } else if (roundingMode === "floor") {
+    } else if (roundingMode === RoundingMode.Floor) {
       return this.#roundFloor(precision).normalized();
-    } else if (roundingMode === "up") {
+    } else if (roundingMode === RoundingMode.Up) {
       return this.#roundUp(precision).normalized();
-    } else if (roundingMode === "down") {
+    } else if (roundingMode === RoundingMode.Down) {
       return this.#roundDown(precision).normalized();
-    } else if (roundingMode === "halfUp") {
+    } else if (roundingMode === RoundingMode.HalfUp) {
       return this.#roundHalfUp(precision).normalized();
-    } else if (roundingMode === "halfDown") {
+    } else if (roundingMode === RoundingMode.HalfDown) {
       return this.#roundHalfDown(precision).normalized();
     } else {
       return this.#roundHalfEven(precision).normalized();

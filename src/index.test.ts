@@ -1,10 +1,10 @@
 import { expect, test } from "vitest";
-import { BigDecimal, RoundingModes } from "./index";
+import { BigDecimal, RoundingMode } from "./index";
 
-test("BigDecimal is reexported", () => {
+test("BigDecimal is exported", () => {
   expect(BigDecimal).toBeDefined();
 });
 
-test("RoundingModes are reexported", () => {
-  expect(RoundingModes).toBeDefined();
+test("RoundingMode is exported", () => {
+  expect(RoundingMode).toBeDefined();
 });

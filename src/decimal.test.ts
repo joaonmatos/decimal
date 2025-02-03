@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { BigDecimal } from "./decimal.js";
-import { RoundingModes } from "./rounding.js";
+import { RoundingMode } from "./rounding.js";
 
 test("parse", () => {
   expect(BigDecimal.valueOf("1").number()).toBe(1);
@@ -130,7 +130,7 @@ test("round", () => {
 });
 
 test("round ceiling", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.Ceiling };
+  const a = { precision: 1, roundingMode: RoundingMode.Ceiling };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.2");
   expect(round("-2.18")).toBe("-2.1");
@@ -145,7 +145,7 @@ test("round ceiling", () => {
 });
 
 test("round floor", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.Floor };
+  const a = { precision: 1, roundingMode: RoundingMode.Floor };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.3");
   expect(round("-2.18")).toBe("-2.2");
@@ -160,7 +160,7 @@ test("round floor", () => {
 });
 
 test("round up", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.Up };
+  const a = { precision: 1, roundingMode: RoundingMode.Up };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.3");
   expect(round("-2.18")).toBe("-2.2");
@@ -175,7 +175,7 @@ test("round up", () => {
 });
 
 test("round down", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.Down };
+  const a = { precision: 1, roundingMode: RoundingMode.Down };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.2");
   expect(round("-2.18")).toBe("-2.1");
@@ -190,7 +190,7 @@ test("round down", () => {
 });
 
 test("round halfUp", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.HalfUp };
+  const a = { precision: 1, roundingMode: RoundingMode.HalfUp };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.3");
   expect(round("-2.18")).toBe("-2.2");
@@ -205,7 +205,7 @@ test("round halfUp", () => {
 });
 
 test("round halfDown", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.HalfDown };
+  const a = { precision: 1, roundingMode: RoundingMode.HalfDown };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.2");
   expect(round("-2.18")).toBe("-2.2");
@@ -220,7 +220,7 @@ test("round halfDown", () => {
 });
 
 test("round halfEven", () => {
-  const a = { precision: 1, roundingMode: RoundingModes.HalfEven };
+  const a = { precision: 1, roundingMode: RoundingMode.HalfEven };
   const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
   expect(round("-2.25")).toBe("-2.2");
   expect(round("-2.18")).toBe("-2.2");

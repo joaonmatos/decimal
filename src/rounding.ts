@@ -1,69 +1,33 @@
 /**
  * Types of rounding available.
  */
-export type RoundingMode =
-  | "ceiling"
-  | "floor"
-  | "up"
-  | "down"
-  | "halfUp"
-  | "halfDown"
-  | "halfEven";
-
-const Ceiling = "ceiling";
-const Floor = "floor";
-const Up = "up";
-const Down = "down";
-const HalfUp = "halfUp";
-const HalfDown = "halfDown";
-const HalfEven = "halfEven";
-
-const Default = HalfEven;
-
-/**
- * Types of rounding available as an enum.
- */
-export const RoundingModes: {
-  /**
-   * Rounds half-even by default.
-   * @see RoundingModes.HalfEven
-   */
-  readonly Default: RoundingMode;
+export enum RoundingMode {
   /**
    * Rounds toward positive infinity.
    */
-  readonly Ceiling: RoundingMode;
+  Ceiling = "ceiling",
   /**
    * Rounds toward negative infinity.
    */
-  readonly Floor: RoundingMode;
+  Floor = "floor",
   /**
    * Rounds away from zero.
    */
-  readonly Up: RoundingMode;
+  Up = "up",
   /**
    * Rounds towards zero.
    */
-  readonly Down: RoundingMode;
+  Down = "down",
   /**
-   * Rounds towards closest valid value. Rounds the digit 5 away from zero.
+   * Rounds towards closest value. Rounds the digit 5 away from zero.
    */
-  readonly HalfUp: RoundingMode;
+  HalfUp = "halfUp",
   /**
-   * Rounds towards closest valid value. Rounds the digit 5 towards zero.
+   * Rounds towards closest value. Rounds the digit 5 towards zero.
    */
-  readonly HalfDown: RoundingMode;
+  HalfDown = "halfDown",
   /**
-   * Rounds towards closest valid value. Rounds the digit 5 towards the nearest even digit.
+   * Rounds towards closest value. Rounds the digit 5 towards the nearest even digit.
    */
-  readonly HalfEven: RoundingMode;
-} = {
-  Default,
-  Ceiling,
-  Floor,
-  Up,
-  Down,
-  HalfUp,
-  HalfDown,
-  HalfEven,
-};
+  HalfEven = "halfEven",
+}
