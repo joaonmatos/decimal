@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@joaonmatos/decimal",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "João N. Matos",
     "email": "me@joaonmatos.com",
@@ -9,10 +9,8 @@
   },
   "license": "Apache-2.0",
   "repository": "github:joaonmatos/decimal",
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.js"
-  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "LICENSE",
@@ -24,8 +22,8 @@
     "check": "prettier --check . && tsc --noEmit && vitest run",
     "dev": "vitest --ui",
     "format": "prettier --write .",
-    "build": "tsc",
-    "prepare": "npm run check && npm run build"
+    "build": "prettier --write . && tsup",
+    "prepare": "npm run build && npm run check"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.0.4",

@@ -3,7 +3,7 @@ import { RoundingMode } from "./rounding.js";
 /**
  * Params for rounding operation.
  */
-export type RoudingParams = {
+export type RoundingParams = {
   /**
    * How to round.
    */
@@ -333,7 +333,7 @@ export class BigDecimal {
    * @param props options
    * @returns rounded BigDecimal
    */
-  round(props?: RoudingParams): BigDecimal {
+  round(props?: RoundingParams): BigDecimal {
     const {
       roundingMode = RoundingMode.HalfEven,
       precision = BigDecimal.#PRECISION,
