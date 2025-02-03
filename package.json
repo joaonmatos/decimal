@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@joaonmatos/decimal",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "author": {
     "name": "João N. Matos",
     "email": "me@joaonmatos.com",
