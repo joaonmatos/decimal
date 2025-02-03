@@ -1,39 +1,91 @@
 import { RoundingModes, type RoundingMode } from "./rounding.js";
 
-export type RoundProps = {
+/**
+ * Params for rounding operation.
+ */
+export type RoudingParams = {
+  /**
+   * How to round.
+   */
   roundingMode?: RoundingMode;
+  /**
+   * How many decimal digits to round to.
+   */
   precision?: number;
+  /**
+   * @private
+   * Whether the input has been normalized already.
+   */
   normalized?: boolean;
 };
 
+/**
+ * Class representing an arbitrary precision decimal number.
+ * The object has two components:
+ * - one bigint serving as a base, storing significant digits
+ * - one number serving as exponent, storing the number's magnitude
+ * The value of a number is: significant * 10 ^ exponent
+ */
 export class BigDecimal {
   static readonly #SQRT_ROUNDS: number = 10;
   static readonly #PRECISION: number = 10;
 
+  /**
+   * -1
+   */
   static readonly MINUS_ONE: BigDecimal = new BigDecimal(-1n, 0);
+  /**
+   * 0
+   */
   static readonly ZERO: BigDecimal = new BigDecimal(0n, 0);
+  /**
+   * 0.5
+   */
   static readonly ZERO_DOT_FIVE: BigDecimal = new BigDecimal(5n, -1);
+  /**
+   * 1
+   */
   static readonly ONE: BigDecimal = new BigDecimal(1n, 0);
+  /**
+   * 2
+   */
   static readonly TWO: BigDecimal = new BigDecimal(2n, 0);
+  /**
+   * 10
+   */
   static readonly TEN: BigDecimal = new BigDecimal(1n, 1);
 
-  readonly mantissa: bigint;
+  /**
+   * Significant bits of the number (the base that gets multiplied by a power of 10).
+   */
+  readonly significant: bigint;
+  /**
+   * Exponent of the number (the power of 10).
+   */
   readonly exponent: number;
 
-  constructor(mantissa: bigint, exponent: number) {
-    this.mantissa = mantissa;
+  /**
+   * Build new BigDecimal from significant and exponent.
+   * @param significant significant base digits
+   * @param exponent how many powers of 10 to multiply the base
+   */
+  constructor(significant: bigint, exponent: number) {
+    this.significant = significant;
     this.exponent = exponent;
   }
 
+  /**
+   * Parses and builds BigDecimal from string or number
+   * @param value a value to convert into a BigDecimal
+   * @returns BigDecimal
+   */
   static valueOf(value: number | bigint | string): BigDecimal {
     if (typeof value === "number") {
       return BigDecimal.#valueOfNumber(value);
     } else if (typeof value === "bigint") {
       return new BigDecimal(value, 0).normalized();
-    } else if (typeof value === "string") {
-      return BigDecimal.#valueOfString(value);
     } else {
-      throw new Error("Invalid value");
+      return BigDecimal.#valueOfString(value);
     }
   }
 
@@ -67,67 +119,105 @@ export class BigDecimal {
     return units.add(decimals).scaleByPowerOfTen(exponent).normalized();
   }
 
+  /**
+   * Approximation to a number. May lose precision.
+   * @returns number
+   */
   number(): number {
-    const mantissa = Number(this.mantissa);
+    const mantissa = Number(this.significant);
     return mantissa * 10 ** this.exponent;
   }
 
+  /**
+   * Compute sum of two BigDecimal objects
+   * @param other other operand
+   * @returns sum
+   */
   add(other: BigDecimal): BigDecimal {
     const diff = this.exponent - other.exponent;
     if (diff < 0) {
       return other.add(this);
     }
-    const mantissa = other.mantissa + this.mantissa * 10n ** BigInt(diff);
+    const mantissa = other.significant + this.significant * 10n ** BigInt(diff);
     const exponent = Math.min(this.exponent, other.exponent);
     return new BigDecimal(mantissa, exponent).normalized();
   }
 
+  /**
+   * Compute difference between two BigDecimal objects
+   * @param other other operand
+   * @returns difference
+   */
   subtract(other: BigDecimal): BigDecimal {
     return this.add(other.negate());
   }
 
+  /**
+   * Compute the simetrical number of a BigDecimal
+   * @returns negated number
+   */
   negate(): BigDecimal {
-    return new BigDecimal(-this.mantissa, this.exponent);
+    return new BigDecimal(-this.significant, this.exponent);
   }
 
+  /**
+   * Compute product of two BigDecimal objects
+   * @param other other operand
+   * @returns product
+   */
   multiply(other: BigDecimal): BigDecimal {
-    const mantissa = this.mantissa * other.mantissa;
+    const mantissa = this.significant * other.significant;
     const exponent = this.exponent + other.exponent;
     return new BigDecimal(mantissa, exponent).normalized();
   }
 
+  /**
+   * Compute quotient of two BigDecimal objects
+   * @param other other operand
+   * @returns quotient
+   */
   divide(other: BigDecimal): BigDecimal {
-    if (other.mantissa === 0n) {
-      if (this.mantissa === 0n) {
+    if (other.significant === 0n) {
+      if (this.significant === 0n) {
         throw new Error("0/0 is undefined");
       }
       throw new Error("Division by zero");
     }
-    if (this.mantissa === 0n) {
+    if (this.significant === 0n) {
       return new BigDecimal(0n, 0);
     }
-    let thisMantissa = this.mantissa;
+    let thisMantissa = this.significant;
     let thisExponent = this.exponent;
-    for (let i = 0; i < 10 && thisMantissa % other.mantissa !== 0n; i++) {
+    for (let i = 0; i < 10 && thisMantissa % other.significant !== 0n; i++) {
       thisMantissa *= 10n;
       thisExponent--;
     }
-    const mantissa = thisMantissa / other.mantissa;
+    const mantissa = thisMantissa / other.significant;
     const exponent = thisExponent - other.exponent;
     return new BigDecimal(mantissa, exponent).normalized();
   }
 
+  /**
+   * Exponentiate object
+   * @param exponent exponent
+   * @returns exponentiation
+   */
   pow(exponent: number): BigDecimal {
     if (exponent < 0) {
       throw new Error("Negative exponents are not supported");
     }
-    const mantissa = this.mantissa ** BigInt(exponent);
+    const mantissa = this.significant ** BigInt(exponent);
     const scale = this.exponent * exponent;
     return new BigDecimal(mantissa, scale).normalized();
   }
 
+  /**
+   * Compute square root of a BigDecimal object.
+   * Uses Newton's method.
+   * @returns square root
+   */
   sqrt(): BigDecimal {
-    if (this.mantissa < 0n) {
+    if (this.significant < 0n) {
       throw new Error("Negative numbers are not supported");
     }
     let guess = BigDecimal.valueOf(Math.sqrt(this.number()));
@@ -139,29 +229,50 @@ export class BigDecimal {
     return guess.normalized();
   }
 
+  /**
+   * Compute absolute value of BigDecimal
+   * @returns absolute value
+   */
   abs(): BigDecimal {
-    if (this.mantissa < 0n) {
+    if (this.significant < 0n) {
       return this.negate();
     } else {
       return this;
     }
   }
 
+  /**
+   * Indicates the sign (negative, zero, nonnegative) of a BigDecimal.
+   * @returns -1, 0, 1, according to sign
+   */
   signum(): number {
-    if (this.mantissa < 0n) {
+    if (this.significant < 0n) {
       return -1;
-    } else if (this.mantissa === 0n) {
+    } else if (this.significant === 0n) {
       return 0;
     } else {
       return 1;
     }
   }
 
+  /**
+   * Multiplies BigDecimal by a power of 10 (changes the exponent)
+   * @param exponent exponent
+   * @returns scaled number
+   */
   scaleByPowerOfTen(exponent: number): BigDecimal {
-    return new BigDecimal(this.mantissa, this.exponent + exponent).normalized();
+    return new BigDecimal(
+      this.significant,
+      this.exponent + exponent,
+    ).normalized();
   }
 
-  round(props?: RoundProps): BigDecimal {
+  /**
+   * Rounds decimals to limit the minimum exponent.
+   * @param props options
+   * @returns rounded BigDecimal
+   */
+  round(props?: RoudingParams): BigDecimal {
     const {
       roundingMode = RoundingModes.Default,
       precision = BigDecimal.#PRECISION,
@@ -206,7 +317,7 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
+    const base = this.significant / modulo;
     return new BigDecimal(base + 1n, -precision);
   }
 
@@ -218,7 +329,7 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
+    const base = this.significant / modulo;
     return new BigDecimal(base, -precision);
   }
 
@@ -230,7 +341,7 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
+    const base = this.significant / modulo;
     return new BigDecimal(base + 1n, -precision);
   }
 
@@ -242,7 +353,7 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
+    const base = this.significant / modulo;
     return new BigDecimal(base, -precision);
   }
 
@@ -254,8 +365,8 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
-    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    const base = this.significant / modulo;
+    const remainder = (this.significant % modulo) / (modulo / 10n);
     if (remainder < 5n) {
       return new BigDecimal(base, -precision);
     } else {
@@ -271,8 +382,8 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
-    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    const base = this.significant / modulo;
+    const remainder = (this.significant % modulo) / (modulo / 10n);
     if (remainder <= 5n) {
       return new BigDecimal(base, -precision);
     } else {
@@ -288,8 +399,8 @@ export class BigDecimal {
     }
     const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
-    const base = this.mantissa / modulo;
-    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    const base = this.significant / modulo;
+    const remainder = (this.significant % modulo) / (modulo / 10n);
     if (remainder < 5n) {
       return new BigDecimal(base, -precision);
     } else if (remainder === 5n) {
@@ -303,8 +414,12 @@ export class BigDecimal {
     }
   }
 
+  /**
+   * Trims unneeded zeros off the end of the internal representation.
+   * @returns normalized identity
+   */
   normalized(): BigDecimal {
-    let mantissa = this.mantissa;
+    let mantissa = this.significant;
     let exponent = this.exponent;
     if (mantissa === 0n) {
       return new BigDecimal(0n, 0);
@@ -316,9 +431,13 @@ export class BigDecimal {
     return new BigDecimal(mantissa, exponent);
   }
 
+  /**
+   * Render to a string.
+   * @returns string representation
+   */
   toString(): string {
-    const sign = this.mantissa < 0n ? "-" : "";
-    const numbers = this.mantissa.toString().replace("-", "");
+    const sign = this.significant < 0n ? "-" : "";
+    const numbers = this.significant.toString().replace("-", "");
     if (this.exponent > 0) {
       return sign + numbers.padEnd(this.exponent + numbers.length, "0");
     } else if (this.exponent === 0) {
@@ -330,6 +449,11 @@ export class BigDecimal {
     }
   }
 
+  /**
+   * Compares two BigDecimal objects after normalizing their exponentiation.
+   * @param other other
+   * @returns -1, 0, 1, if smaller, same or bigger magnitude
+   */
   compareTo(other: BigDecimal): number {
     let subject = this.normalized();
     const object = other.normalized();
@@ -338,30 +462,43 @@ export class BigDecimal {
       return -object.compareTo(subject);
     }
     subject = new BigDecimal(
-      subject.mantissa * 10n ** BigInt(diff),
+      subject.significant * 10n ** BigInt(diff),
       subject.exponent - diff,
     );
-    if (subject.mantissa < object.mantissa) {
+    if (subject.significant < object.significant) {
       return -1;
-    } else if (subject.mantissa === object.mantissa) {
+    } else if (subject.significant === object.significant) {
       return 0;
     } else {
       return 1;
     }
   }
 
-  equalValue(other: BigDecimal): boolean {
-    return this.normalized().equals(other.normalized());
-  }
-
+  /**
+   * Component-wise equality. Does not account for equivalent representations with different exponents.
+   * @param other other
+   * @returns if they have the same components
+   */
   equals(other: BigDecimal): boolean {
-    return this.mantissa === other.mantissa && this.exponent === other.exponent;
+    return (
+      this.significant === other.significant && this.exponent === other.exponent
+    );
   }
 
+  /**
+   * Returns the smaller of two BigDecimal objects.
+   * @param other other
+   * @returns smaller
+   */
   min(other: BigDecimal): BigDecimal {
     return this.compareTo(other) <= 0 ? this : other;
   }
 
+  /**
+   * Returns the larger of two BigDecimal objects.
+   * @param other other
+   * @returns larger
+   */
   max(other: BigDecimal): BigDecimal {
     return this.compareTo(other) >= 0 ? this : other;
   }

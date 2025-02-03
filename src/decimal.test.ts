@@ -9,18 +9,8 @@ test("parse", () => {
   expect(BigDecimal.valueOf(1).number()).toBe(1);
   expect(BigDecimal.valueOf(10n).number()).toBe(10);
   expect(BigDecimal.valueOf("-2.25").number()).toBe(-2.25);
-  // @ts-ignore
-  expect(() => BigDecimal.valueOf(new Date())).toThrowError();
   expect(() => BigDecimal.valueOf(NaN)).toThrowError();
   expect(() => BigDecimal.valueOf("$$")).toThrowError();
-});
-
-test("equalValue", () => {
-  const a = new BigDecimal(120n, -2);
-  const b = new BigDecimal(12n, -1);
-  const c = new BigDecimal(3n, 0);
-  expect(a.equalValue(b)).toBe(true);
-  expect(a.equalValue(c)).toBe(false);
 });
 
 test("add", () => {
