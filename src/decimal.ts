@@ -1,3 +1,11 @@
+import { RoundingModes, type RoundingMode } from "./rounding.js";
+
+export type RoundProps = {
+  roundingMode?: RoundingMode;
+  precision?: number;
+  normalized?: boolean;
+};
+
 export class BigDecimal {
   static readonly #SQRT_ROUNDS: number = 10;
   static readonly #PRECISION: number = 10;
@@ -21,7 +29,7 @@ export class BigDecimal {
     if (typeof value === "number") {
       return BigDecimal.#valueOfNumber(value);
     } else if (typeof value === "bigint") {
-      return new BigDecimal(value, 0).normalized;
+      return new BigDecimal(value, 0).normalized();
     } else if (typeof value === "string") {
       return BigDecimal.#valueOfString(value);
     } else {
@@ -39,7 +47,7 @@ export class BigDecimal {
       mantissa *= 10;
       exponent--;
     }
-    return new BigDecimal(BigInt(mantissa), exponent).normalized;
+    return new BigDecimal(BigInt(mantissa), exponent).normalized();
   }
 
   static #valueOfString(value: string) {
@@ -49,14 +57,17 @@ export class BigDecimal {
       throw new Error("Invalid string");
     }
     const units = new BigDecimal(BigInt(result[1]!), 0);
-    const decimals = result[2]
+    let decimals = result[2]
       ? new BigDecimal(BigInt(result[2]), -result[2].length)
       : new BigDecimal(0n, 0);
+    if (units.signum() === -1) {
+      decimals = decimals.negate();
+    }
     const exponent = result[3] ? Number.parseInt(result[3]) : 0;
-    return units.add(decimals).scaleByPowerOfTen(exponent).normalized;
+    return units.add(decimals).scaleByPowerOfTen(exponent).normalized();
   }
 
-  get number(): number {
+  number(): number {
     const mantissa = Number(this.mantissa);
     return mantissa * 10 ** this.exponent;
   }
@@ -68,7 +79,7 @@ export class BigDecimal {
     }
     const mantissa = other.mantissa + this.mantissa * 10n ** BigInt(diff);
     const exponent = Math.min(this.exponent, other.exponent);
-    return new BigDecimal(mantissa, exponent).normalized;
+    return new BigDecimal(mantissa, exponent).normalized();
   }
 
   subtract(other: BigDecimal): BigDecimal {
@@ -82,7 +93,7 @@ export class BigDecimal {
   multiply(other: BigDecimal): BigDecimal {
     const mantissa = this.mantissa * other.mantissa;
     const exponent = this.exponent + other.exponent;
-    return new BigDecimal(mantissa, exponent).normalized;
+    return new BigDecimal(mantissa, exponent).normalized();
   }
 
   divide(other: BigDecimal): BigDecimal {
@@ -103,7 +114,7 @@ export class BigDecimal {
     }
     const mantissa = thisMantissa / other.mantissa;
     const exponent = thisExponent - other.exponent;
-    return new BigDecimal(mantissa, exponent).normalized;
+    return new BigDecimal(mantissa, exponent).normalized();
   }
 
   pow(exponent: number): BigDecimal {
@@ -112,20 +123,20 @@ export class BigDecimal {
     }
     const mantissa = this.mantissa ** BigInt(exponent);
     const scale = this.exponent * exponent;
-    return new BigDecimal(mantissa, scale).normalized;
+    return new BigDecimal(mantissa, scale).normalized();
   }
 
   sqrt(): BigDecimal {
     if (this.mantissa < 0n) {
       throw new Error("Negative numbers are not supported");
     }
-    let guess = BigDecimal.valueOf(Math.sqrt(this.number));
+    let guess = BigDecimal.valueOf(Math.sqrt(this.number()));
     for (let i = 0; i < BigDecimal.#SQRT_ROUNDS; i++) {
       guess = guess.subtract(
         guess.multiply(guess).subtract(this).divide(guess.add(guess)),
       );
     }
-    return guess.normalized;
+    return guess.normalized();
   }
 
   abs(): BigDecimal {
@@ -136,7 +147,7 @@ export class BigDecimal {
     }
   }
 
-  get signum(): number {
+  signum(): number {
     if (this.mantissa < 0n) {
       return -1;
     } else if (this.mantissa === 0n) {
@@ -147,20 +158,135 @@ export class BigDecimal {
   }
 
   scaleByPowerOfTen(exponent: number): BigDecimal {
-    return new BigDecimal(this.mantissa, this.exponent + exponent).normalized;
+    return new BigDecimal(this.mantissa, this.exponent + exponent).normalized();
   }
 
-  round(
-    precision: number = BigDecimal.#PRECISION,
-    normalized: boolean = false,
-  ): BigDecimal {
+  round(props?: RoundProps): BigDecimal {
+    const {
+      roundingMode = RoundingModes.Default,
+      precision = BigDecimal.#PRECISION,
+      normalized = false,
+    } = props ?? {};
     if (!normalized) {
-      return this.normalized.round(precision, true);
+      return this.normalized().round({
+        roundingMode,
+        precision,
+        normalized: true,
+      });
+    }
+    if (this.signum() === 0) {
+      return BigDecimal.ZERO;
     }
     const excessExponent = -this.exponent - precision;
     if (excessExponent <= 0) {
       return this;
     }
+    if (roundingMode === "ceiling") {
+      return this.#roundCeiling(precision).normalized();
+    } else if (roundingMode === "floor") {
+      return this.#roundFloor(precision).normalized();
+    } else if (roundingMode === "up") {
+      return this.#roundUp(precision).normalized();
+    } else if (roundingMode === "down") {
+      return this.#roundDown(precision).normalized();
+    } else if (roundingMode === "halfUp") {
+      return this.#roundHalfUp(precision).normalized();
+    } else if (roundingMode === "halfDown") {
+      return this.#roundHalfDown(precision).normalized();
+    } else {
+      return this.#roundHalfEven(precision).normalized();
+    }
+  }
+
+  #roundCeiling(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundFloor(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    return new BigDecimal(base + 1n, -precision);
+  }
+
+  #roundFloor(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundCeiling(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    return new BigDecimal(base, -precision);
+  }
+
+  #roundUp(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundUp(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    return new BigDecimal(base + 1n, -precision);
+  }
+
+  #roundDown(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundDown(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    return new BigDecimal(base, -precision);
+  }
+
+  #roundHalfUp(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundHalfUp(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    if (remainder < 5n) {
+      return new BigDecimal(base, -precision);
+    } else {
+      return new BigDecimal(base + 1n, -precision);
+    }
+  }
+
+  #roundHalfDown(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundHalfDown(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    if (remainder <= 5n) {
+      return new BigDecimal(base, -precision);
+    } else {
+      return new BigDecimal(base + 1n, -precision);
+    }
+  }
+
+  #roundHalfEven(precision: number): BigDecimal {
+    if (this.signum() === -1) {
+      const simetric = this.negate();
+      const rounded = simetric.#roundHalfEven(precision);
+      return rounded.negate();
+    }
+    const excessExponent = -this.exponent - precision;
     const modulo = 10n ** BigInt(excessExponent);
     const base = this.mantissa / modulo;
     const remainder = (this.mantissa % modulo) / (modulo / 10n);
@@ -177,7 +303,7 @@ export class BigDecimal {
     }
   }
 
-  get normalized(): BigDecimal {
+  normalized(): BigDecimal {
     let mantissa = this.mantissa;
     let exponent = this.exponent;
     if (mantissa === 0n) {
@@ -191,22 +317,22 @@ export class BigDecimal {
   }
 
   toString(): string {
-    let units: bigint;
-    if (this.exponent >= 0) {
-      units = this.mantissa * 10n ** BigInt(this.exponent);
+    const sign = this.mantissa < 0n ? "-" : "";
+    const numbers = this.mantissa.toString().replace("-", "");
+    if (this.exponent > 0) {
+      return sign + numbers.padEnd(this.exponent + numbers.length, "0");
+    } else if (this.exponent === 0) {
+      return sign + numbers;
     } else {
-      units = this.mantissa / 10n ** BigInt(-this.exponent);
+      const units = numbers.substring(0, numbers.length + this.exponent);
+      const decimals = numbers.substring(numbers.length + this.exponent);
+      return `${sign}${units}.${decimals}`;
     }
-    let decimals = "";
-    if (this.exponent < 0) {
-      decimals = `.${this.mantissa % 10n ** BigInt(-this.exponent)}`;
-    }
-    return `${units}${decimals}`;
   }
 
   compareTo(other: BigDecimal): number {
-    let subject = this.normalized;
-    const object = other.normalized;
+    let subject = this.normalized();
+    const object = other.normalized();
     const diff = subject.exponent - object.exponent;
     if (diff < 0) {
       return -object.compareTo(subject);
@@ -225,7 +351,7 @@ export class BigDecimal {
   }
 
   equalValue(other: BigDecimal): boolean {
-    return this.normalized.equals(other.normalized);
+    return this.normalized().equals(other.normalized());
   }
 
   equals(other: BigDecimal): boolean {

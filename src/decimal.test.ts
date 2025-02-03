@@ -1,12 +1,14 @@
 import { expect, test } from "vitest";
 import { BigDecimal } from "./decimal.js";
+import { RoundingModes } from "./rounding.js";
 
 test("parse", () => {
-  expect(BigDecimal.valueOf("1").number).toBe(1);
-  expect(BigDecimal.valueOf("1.25").number).toBe(1.25);
-  expect(BigDecimal.valueOf("1.3e2").number).toBe(130);
-  expect(BigDecimal.valueOf(1).number).toBe(1);
-  expect(BigDecimal.valueOf(10n).number).toBe(10);
+  expect(BigDecimal.valueOf("1").number()).toBe(1);
+  expect(BigDecimal.valueOf("1.25").number()).toBe(1.25);
+  expect(BigDecimal.valueOf("1.3e2").number()).toBe(130);
+  expect(BigDecimal.valueOf(1).number()).toBe(1);
+  expect(BigDecimal.valueOf(10n).number()).toBe(10);
+  expect(BigDecimal.valueOf("-2.25").number()).toBe(-2.25);
   // @ts-ignore
   expect(() => BigDecimal.valueOf(new Date())).toThrowError();
   expect(() => BigDecimal.valueOf(NaN)).toThrowError();
@@ -76,31 +78,33 @@ test("divide", () => {
 });
 
 test("pow", () => {
-  expect(BigDecimal.valueOf(1.2).pow(4).number).toBeCloseTo(2.0736);
-  expect(BigDecimal.TWO.pow(16).number).toBe(65536);
+  expect(BigDecimal.valueOf(1.2).pow(4).number()).toBeCloseTo(2.0736);
+  expect(BigDecimal.TWO.pow(16).number()).toBe(65536);
   expect(() => BigDecimal.TWO.pow(-2)).toThrowError();
 });
 
 test("sqrt", () => {
-  expect(BigDecimal.TWO.sqrt().number).toBeCloseTo(Math.SQRT2);
-  expect(BigDecimal.valueOf(4).sqrt().number).toBe(2);
+  expect(BigDecimal.TWO.sqrt().number()).toBeCloseTo(Math.SQRT2);
+  expect(BigDecimal.valueOf(4).sqrt().number()).toBe(2);
   expect(() => BigDecimal.MINUS_ONE.sqrt()).toThrowError();
 });
 
 test("abs", () => {
-  expect(BigDecimal.MINUS_ONE.abs().number).toBe(1);
-  expect(BigDecimal.ONE.abs().number).toBe(1);
+  expect(BigDecimal.MINUS_ONE.abs().number()).toBe(1);
+  expect(BigDecimal.ONE.abs().number()).toBe(1);
 });
 
 test("signum", () => {
-  expect(BigDecimal.valueOf(-2).signum).toBe(-1);
-  expect(BigDecimal.ZERO.signum).toBe(0);
-  expect(BigDecimal.TWO.signum).toBe(1);
+  expect(BigDecimal.valueOf(-2).signum()).toBe(-1);
+  expect(BigDecimal.ZERO.signum()).toBe(0);
+  expect(BigDecimal.TWO.signum()).toBe(1);
 });
 
 test("toString", () => {
   expect(new BigDecimal(10325n, -3).toString()).toBe("10.325");
   expect(BigDecimal.TEN.toString()).toBe("10");
+  expect(BigDecimal.ONE.toString()).toBe("1");
+  expect(BigDecimal.valueOf("-2.2").toString()).toBe("-2.2");
 });
 
 test("scaleByPowerOfTen", () => {
@@ -122,27 +126,120 @@ test("compareTo", () => {
 });
 
 test("min", () => {
-  expect(BigDecimal.ONE.min(BigDecimal.TWO).number).toBe(1);
-  expect(BigDecimal.TWO.min(BigDecimal.ONE).number).toBe(1);
+  expect(BigDecimal.ONE.min(BigDecimal.TWO).number()).toBe(1);
+  expect(BigDecimal.TWO.min(BigDecimal.ONE).number()).toBe(1);
 });
 
 test("max", () => {
-  expect(BigDecimal.ONE.max(BigDecimal.TWO).number).toBe(2);
-  expect(BigDecimal.TWO.max(BigDecimal.ONE).number).toBe(2);
+  expect(BigDecimal.ONE.max(BigDecimal.TWO).number()).toBe(2);
+  expect(BigDecimal.TWO.max(BigDecimal.ONE).number()).toBe(2);
 });
 
 test("round", () => {
-  expect(BigDecimal.TEN.round().number).toBe(10);
-  expect(BigDecimal.valueOf("23.12956412").round(6).toString()).toBe(
-    "23.129564",
-  );
-  expect(BigDecimal.valueOf("23.12956494").round(6).toString()).toBe(
-    "23.129565",
-  );
-  expect(BigDecimal.valueOf("23.12956457").round(6).toString()).toBe(
-    "23.129564",
-  );
-  expect(BigDecimal.valueOf("23.12956559").round(6).toString()).toBe(
-    "23.129566",
-  );
+  expect(BigDecimal.ZERO.round().number()).toBe(0);
+});
+
+test("round ceiling", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.Ceiling };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.2");
+  expect(round("-2.18")).toBe("-2.1");
+  expect(round("-2.15")).toBe("-2.1");
+  expect(round("-2.13")).toBe("-2.1");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.2");
+  expect(round("2.15")).toBe("2.2");
+  expect(round("2.18")).toBe("2.2");
+  expect(round("2.25")).toBe("2.3");
+});
+
+test("round floor", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.Floor };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.3");
+  expect(round("-2.18")).toBe("-2.2");
+  expect(round("-2.15")).toBe("-2.2");
+  expect(round("-2.13")).toBe("-2.2");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.1");
+  expect(round("2.15")).toBe("2.1");
+  expect(round("2.18")).toBe("2.1");
+  expect(round("2.25")).toBe("2.2");
+});
+
+test("round up", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.Up };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.3");
+  expect(round("-2.18")).toBe("-2.2");
+  expect(round("-2.15")).toBe("-2.2");
+  expect(round("-2.13")).toBe("-2.2");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.2");
+  expect(round("2.15")).toBe("2.2");
+  expect(round("2.18")).toBe("2.2");
+  expect(round("2.25")).toBe("2.3");
+});
+
+test("round down", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.Down };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.2");
+  expect(round("-2.18")).toBe("-2.1");
+  expect(round("-2.15")).toBe("-2.1");
+  expect(round("-2.13")).toBe("-2.1");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.1");
+  expect(round("2.15")).toBe("2.1");
+  expect(round("2.18")).toBe("2.1");
+  expect(round("2.25")).toBe("2.2");
+});
+
+test("round halfUp", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.HalfUp };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.3");
+  expect(round("-2.18")).toBe("-2.2");
+  expect(round("-2.15")).toBe("-2.2");
+  expect(round("-2.13")).toBe("-2.1");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.1");
+  expect(round("2.15")).toBe("2.2");
+  expect(round("2.18")).toBe("2.2");
+  expect(round("2.25")).toBe("2.3");
+});
+
+test("round halfDown", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.HalfDown };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.2");
+  expect(round("-2.18")).toBe("-2.2");
+  expect(round("-2.15")).toBe("-2.1");
+  expect(round("-2.13")).toBe("-2.1");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.1");
+  expect(round("2.15")).toBe("2.1");
+  expect(round("2.18")).toBe("2.2");
+  expect(round("2.25")).toBe("2.2");
+});
+
+test("round halfEven", () => {
+  const a = { precision: 1, roundingMode: RoundingModes.HalfEven };
+  const round = (n: string) => BigDecimal.valueOf(n).round(a).toString();
+  expect(round("-2.25")).toBe("-2.2");
+  expect(round("-2.18")).toBe("-2.2");
+  expect(round("-2.15")).toBe("-2.2");
+  expect(round("-2.13")).toBe("-2.1");
+  expect(round("-2.1")).toBe("-2.1");
+  expect(round("2.1")).toBe("2.1");
+  expect(round("2.13")).toBe("2.1");
+  expect(round("2.15")).toBe("2.2");
+  expect(round("2.18")).toBe("2.2");
+  expect(round("2.25")).toBe("2.2");
 });
