@@ -233,3 +233,53 @@ test("round halfEven", () => {
   expect(round("2.18")).toBe("2.2");
   expect(round("2.25")).toBe("2.2");
 });
+
+test("integralPart", () => {
+  expect(BigDecimal.valueOf(-23.75).integralPart().number()).toBe(-23);
+  expect(BigDecimal.valueOf(23.75).integralPart().number()).toBe(23);
+  expect(BigDecimal.valueOf(100).integralPart().number()).toBe(100);
+});
+
+test("decimalPart", () => {
+  expect(BigDecimal.valueOf(-23.75).decimalPart().number()).toBe(-0.75);
+  expect(BigDecimal.valueOf(23.75).decimalPart().number()).toBe(0.75);
+  expect(BigDecimal.valueOf(100).decimalPart().number()).toBe(0);
+});
+
+test("divideToIntegralValue", () => {
+  expect(
+    BigDecimal.valueOf(10)
+      .divideToIntegralValue(BigDecimal.valueOf(3))
+      .number(),
+  ).toBe(3);
+  expect(
+    BigDecimal.valueOf(10)
+      .divideToIntegralValue(BigDecimal.valueOf(-3))
+      .number(),
+  ).toBe(-3);
+  expect(
+    BigDecimal.valueOf(-10)
+      .divideToIntegralValue(BigDecimal.valueOf(3))
+      .number(),
+  ).toBe(-3);
+  expect(
+    BigDecimal.valueOf(10)
+      .divideToIntegralValue(BigDecimal.valueOf(-3))
+      .number(),
+  ).toBe(-3);
+});
+
+test("remain", () => {
+  expect(BigDecimal.valueOf(10).remainder(BigDecimal.valueOf(3)).number()).toBe(
+    1,
+  );
+  expect(
+    BigDecimal.valueOf(10).remainder(BigDecimal.valueOf(-3)).number(),
+  ).toBe(1);
+  expect(
+    BigDecimal.valueOf(-10).remainder(BigDecimal.valueOf(3)).number(),
+  ).toBe(-1);
+  expect(
+    BigDecimal.valueOf(-10).remainder(BigDecimal.valueOf(-3)).number(),
+  ).toBe(-1);
+});

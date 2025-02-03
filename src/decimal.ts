@@ -93,13 +93,13 @@ export class BigDecimal {
     if (!Number.isFinite(value)) {
       throw new Error("NaN and Infinite are not supported");
     }
-    let mantissa = value;
+    let significant = value;
     let exponent = 0;
-    while (!Number.isInteger(mantissa)) {
-      mantissa *= 10;
+    while (!Number.isInteger(significant)) {
+      significant *= 10;
       exponent--;
     }
-    return new BigDecimal(BigInt(mantissa), exponent).normalized();
+    return new BigDecimal(BigInt(significant), exponent).normalized();
   }
 
   static #valueOfString(value: string) {
@@ -124,8 +124,8 @@ export class BigDecimal {
    * @returns number
    */
   number(): number {
-    const mantissa = Number(this.significant);
-    return mantissa * 10 ** this.exponent;
+    const significant = Number(this.significant);
+    return significant * 10 ** this.exponent;
   }
 
   /**
@@ -138,9 +138,10 @@ export class BigDecimal {
     if (diff < 0) {
       return other.add(this);
     }
-    const mantissa = other.significant + this.significant * 10n ** BigInt(diff);
+    const significant =
+      other.significant + this.significant * 10n ** BigInt(diff);
     const exponent = Math.min(this.exponent, other.exponent);
-    return new BigDecimal(mantissa, exponent).normalized();
+    return new BigDecimal(significant, exponent).normalized();
   }
 
   /**
@@ -166,9 +167,9 @@ export class BigDecimal {
    * @returns product
    */
   multiply(other: BigDecimal): BigDecimal {
-    const mantissa = this.significant * other.significant;
+    const significant = this.significant * other.significant;
     const exponent = this.exponent + other.exponent;
-    return new BigDecimal(mantissa, exponent).normalized();
+    return new BigDecimal(significant, exponent).normalized();
   }
 
   /**
@@ -186,15 +187,75 @@ export class BigDecimal {
     if (this.significant === 0n) {
       return new BigDecimal(0n, 0);
     }
-    let thisMantissa = this.significant;
+    let thissignificant = this.significant;
     let thisExponent = this.exponent;
-    for (let i = 0; i < 10 && thisMantissa % other.significant !== 0n; i++) {
-      thisMantissa *= 10n;
+    for (let i = 0; i < 10 && thissignificant % other.significant !== 0n; i++) {
+      thissignificant *= 10n;
       thisExponent--;
     }
-    const mantissa = thisMantissa / other.significant;
+    const significant = thissignificant / other.significant;
     const exponent = thisExponent - other.exponent;
-    return new BigDecimal(mantissa, exponent).normalized();
+    return new BigDecimal(significant, exponent).normalized();
+  }
+
+  /**
+   * Returns a BigDecimal whose value is the integer part of the quotient (this / divisor) rounded down.
+   * @param other value to divide by
+   * @returns The integer part of this / other
+   */
+  divideToIntegralValue(other: BigDecimal): BigDecimal {
+    return this.divide(other).round({
+      precision: 0,
+      roundingMode: RoundingModes.Down,
+    });
+  }
+
+  /**
+   * Returns a BigDecimal whose value is (this % divisor).
+   * The remainder is given by this.subtract(this.divideToIntegralValue(divisor).multiply(divisor)). Note that this is not the modulo operation (the result can be negative).
+   * @param other divisor
+   * @returns remain
+   */
+  remainder(other: BigDecimal): BigDecimal {
+    return this.subtract(this.divideToIntegralValue(other).multiply(other));
+  }
+
+  /**
+   * Returns the integer part of the number. The sign will be the same as the original number, so that n.integralPart().add(n.decimalPart()) == n.
+   * @returns the integer part of this
+   */
+  integralPart(): BigDecimal {
+    if (this.significant < 0n) {
+      return this.negate().integralPart().negate();
+    }
+    const normalized = this.normalized();
+    if (normalized.exponent >= 0) {
+      return normalized;
+    } else {
+      return new BigDecimal(
+        normalized.significant / 10n ** BigInt(-normalized.exponent),
+        0,
+      );
+    }
+  }
+
+  /**
+   * Returns the decimal part of the number. The sign will be the same as the original number, so that n.integralPart().add(n.decimalPart()) == n.
+   * @returns the decimal part of this
+   */
+  decimalPart(): BigDecimal {
+    if (this.significant < 0n) {
+      return this.negate().decimalPart().negate();
+    }
+    const normalized = this.normalized();
+    if (normalized.exponent >= 0) {
+      return BigDecimal.ZERO;
+    } else {
+      return new BigDecimal(
+        normalized.significant % 10n ** BigInt(-normalized.exponent),
+        normalized.exponent,
+      );
+    }
   }
 
   /**
@@ -206,9 +267,9 @@ export class BigDecimal {
     if (exponent < 0) {
       throw new Error("Negative exponents are not supported");
     }
-    const mantissa = this.significant ** BigInt(exponent);
+    const significant = this.significant ** BigInt(exponent);
     const scale = this.exponent * exponent;
-    return new BigDecimal(mantissa, scale).normalized();
+    return new BigDecimal(significant, scale).normalized();
   }
 
   /**
@@ -419,16 +480,16 @@ export class BigDecimal {
    * @returns normalized identity
    */
   normalized(): BigDecimal {
-    let mantissa = this.significant;
+    let significant = this.significant;
     let exponent = this.exponent;
-    if (mantissa === 0n) {
+    if (significant === 0n) {
       return new BigDecimal(0n, 0);
     }
-    while (mantissa % 10n === 0n) {
-      mantissa /= 10n;
+    while (significant % 10n === 0n) {
+      significant /= 10n;
       exponent++;
     }
-    return new BigDecimal(mantissa, exponent);
+    return new BigDecimal(significant, exponent);
   }
 
   /**
