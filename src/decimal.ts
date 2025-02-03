@@ -1,4 +1,4 @@
-import { RoundingMode } from "./rounding.js";
+import { RoundingMode } from "./rounding";
 
 /**
  * Params for rounding operation.

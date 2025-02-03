@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@joaonmatos/decimal",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "author": {
     "name": "João N. Matos",
     "email": "me@joaonmatos.com",
@@ -19,7 +19,7 @@
     "README.md"
   ],
   "scripts": {
-    "check": "prettier --check . && tsc --noEmit && vitest run",
+    "check": "prettier --check . && tsc && vitest run",
     "dev": "vitest --ui",
     "format": "prettier --write .",
     "build": "prettier --write . && tsup",

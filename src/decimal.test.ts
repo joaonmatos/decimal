@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { BigDecimal } from "./decimal.js";
-import { RoundingMode } from "./rounding.js";
+import { BigDecimal } from "./decimal";
+import { RoundingMode } from "./rounding";
 
 test("parse", () => {
   expect(BigDecimal.valueOf("1").number()).toBe(1);

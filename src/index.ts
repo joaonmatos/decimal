@@ -1,2 +1,2 @@
-export { BigDecimal } from "./decimal.js";
-export { RoundingMode } from "./rounding.js";
+export { BigDecimal } from "./decimal";
+export { RoundingMode } from "./rounding";
