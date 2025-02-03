@@ -1,5 +1,6 @@
 export class BigDecimal {
   static readonly #SQRT_ROUNDS: number = 10;
+  static readonly #PRECISION: number = 6;
 
   static readonly MINUS_ONE: BigDecimal = new BigDecimal(-1n, 0);
   static readonly ZERO: BigDecimal = new BigDecimal(0n, 0);
@@ -147,6 +148,30 @@ export class BigDecimal {
 
   scaleByPowerOfTen(exponent: number): BigDecimal {
     return new BigDecimal(this.mantissa, this.exponent + exponent).normalized;
+  }
+
+  round(normalized?: boolean | undefined): BigDecimal {
+    if (!normalized) {
+      return this.normalized.round(true);
+    }
+    const excessExponent = -this.exponent - BigDecimal.#PRECISION;
+    if (excessExponent <= 0) {
+      return this;
+    }
+    const modulo = 10n ** BigInt(excessExponent);
+    const base = this.mantissa / modulo;
+    const remainder = (this.mantissa % modulo) / (modulo / 10n);
+    if (remainder < 5n) {
+      return new BigDecimal(base, -BigDecimal.#PRECISION);
+    } else if (remainder === 5n) {
+      if (base % 2n === 0n) {
+        return new BigDecimal(base, -BigDecimal.#PRECISION);
+      } else {
+        return new BigDecimal(base + 1n, -BigDecimal.#PRECISION);
+      }
+    } else {
+      return new BigDecimal(base + 1n, -BigDecimal.#PRECISION);
+    }
   }
 
   get normalized(): BigDecimal {

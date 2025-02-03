@@ -130,3 +130,19 @@ test("max", () => {
   expect(BigDecimal.ONE.max(BigDecimal.TWO).number).toBe(2);
   expect(BigDecimal.TWO.max(BigDecimal.ONE).number).toBe(2);
 });
+
+test("round", () => {
+  expect(BigDecimal.TEN.round().number).toBe(10);
+  expect(BigDecimal.valueOf("23.12956412").round().toString()).toBe(
+    "23.129564",
+  );
+  expect(BigDecimal.valueOf("23.12956494").round().toString()).toBe(
+    "23.129565",
+  );
+  expect(BigDecimal.valueOf("23.12956457").round().toString()).toBe(
+    "23.129564",
+  );
+  expect(BigDecimal.valueOf("23.12956559").round().toString()).toBe(
+    "23.129566",
+  );
+});
