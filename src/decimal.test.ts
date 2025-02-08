@@ -95,6 +95,7 @@ test("toString", () => {
   expect(BigDecimal.TEN.toString()).toBe("10");
   expect(BigDecimal.ONE.toString()).toBe("1");
   expect(BigDecimal.valueOf("-2.2").toString()).toBe("-2.2");
+  expect(new BigDecimal(152588n, -6).toString()).toBe("0.152588");
 });
 
 test("scaleByPowerOfTen", () => {

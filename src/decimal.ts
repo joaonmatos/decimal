@@ -504,7 +504,10 @@ export class BigDecimal {
     } else if (this.exponent === 0) {
       return sign + numbers;
     } else {
-      const units = numbers.substring(0, numbers.length + this.exponent);
+      let units = numbers.substring(0, numbers.length + this.exponent);
+      if (units == "") {
+        units = "0";
+      }
       const decimals = numbers.substring(numbers.length + this.exponent);
       return `${sign}${units}.${decimals}`;
     }
